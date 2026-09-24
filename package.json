@@ -1,0 +1,39 @@
+{
+  "name": "fairtick",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "resolve-registry": "tsx scripts/resolve-registry.ts",
+    "smoke-quote": "tsx scripts/smoke-quote.ts",
+    "verify-dependencies": "tsx scripts/verify-dependencies.ts",
+    "capture": "tsx scripts/capture-snapshot.ts",
+    "eval": "tsx scripts/eval.ts",
+    "worker": "tsx scripts/worker.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "next": "16.3.6",
+    "openai": "7.23.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "ulid": "3.0.2",
+    "viem": "2.56.8",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
