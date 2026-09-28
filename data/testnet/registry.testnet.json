@@ -1,0 +1,83 @@
+{
+ "chainId": 46630,
+ "network": "robinhood-testnet",
+ "verifiedAt": "2026-09-27T23:45:46.372Z",
+ "verifiedAtBlock": "125419349",
+ "demo": {
+  "mock": true,
+  "notice": "TESTNET DEMO: mock tokens (mUSDG, mNVDA), an operator-set mock price and operator-seeded (controlled) liquidity. Not USDG, not a Robinhood stock token, not Chainlink, not Uniswap, not market data. Tokens have no value.",
+  "referencePriceUsd": "225",
+  "deployer": "0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0",
+  "contracts": {
+   "quote": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+   "token": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+   "feed": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+   "router": "0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da",
+   "pool": "0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46",
+   "quoter": "0x65C97C0e0F76944B6b9743893b014c42cee8a228"
+  }
+ },
+ "core": {
+  "usdg": {
+   "address": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+   "decimals": 6,
+   "symbol": "mUSDG",
+   "source": "MOCK quote token, deployed by FairTick scripts/testnet-deploy.ts on Robinhood Chain testnet 46630"
+  },
+  "router": {
+   "address": "0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da",
+   "source": "MOCK demo router, deployed by FairTick scripts/testnet-deploy.ts on Robinhood Chain testnet 46630"
+  },
+  "quoter": {
+   "address": "0x65C97C0e0F76944B6b9743893b014c42cee8a228",
+   "source": "MOCK demo quoter, deployed by FairTick scripts/testnet-deploy.ts on Robinhood Chain testnet 46630"
+  }
+ },
+ "symbols": {
+  "mNVDA": {
+   "status": "verified",
+   "token": {
+    "address": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+    "decimals": 18,
+    "symbol": "mNVDA",
+    "name": "FairTick Demo Mock NVDA (TESTNET, no value)",
+    "source": "MOCK token, deployed by FairTick scripts/testnet-deploy.ts on Robinhood Chain testnet 46630"
+   },
+   "uiMultiplier": {
+    "valueRaw": "1000000000000000000",
+    "valueDecimal": 1,
+    "source": "mock constant",
+    "note": "Mock asset: no multiplier changes"
+   },
+   "feed": {
+    "proxyAddress": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+    "aggregatorAddress": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+    "decimals": 8,
+    "description": "MOCK mNVDA / USD (operator-set TESTNET demo price; not Chainlink, not market data)",
+    "heartbeatSeconds": 86400,
+    "source": "MOCK operator-set feed, deployed by FairTick scripts/testnet-deploy.ts on Robinhood Chain testnet 46630"
+   },
+   "pool": {
+    "protocol": "fairtickDemoPool",
+    "address": "0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46",
+    "feeTier": 500,
+    "token0": {
+     "address": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+     "symbol": "mUSDG"
+    },
+    "token1": {
+     "address": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+     "symbol": "mNVDA"
+    },
+    "quoteToken": "USDG",
+    "selectionRationale": "Only demo pool; controlled liquidity seeded by the operator",
+    "verifiedAtBlock": "125419349"
+   },
+   "corporateAction": {
+    "pending": false,
+    "source": "Not applicable: mock asset"
+   },
+   "tradingHaltAtVerification": false
+  }
+ }
+}

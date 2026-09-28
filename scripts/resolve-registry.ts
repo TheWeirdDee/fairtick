@@ -197,14 +197,15 @@ async function main() {
       console.warn(`Could not fetch trading-halt status for ${symbol}; leaving null (UNAVAILABLE), not assuming false.`);
     }
 
-    let corporateAction: { pending: boolean; type?: string; status?: string; processDate?: string; rate?: string } = {
-      pending: false,
+    let corporateAction: { pending: boolean | null; type?: string; status?: string; processDate?: string; rate?: string } = {
+      pending: null,
     };
     try {
       const caRes = await fetch(RHJ_CORP_ACTIONS_URL);
       if (caRes.ok) {
         const caData = (await caRes.json()) as { corpActions: Array<{ tokenSymbol: string; type: string; status: string; processDate: { year: number; month: number; day: number }; details?: { cashDividend?: { rate: string } } }> };
         const match = caData.corpActions.find((a) => a.tokenSymbol === symbol && a.status === "CORPORATE_ACTION_STATUS_IN_PROGRESS");
+        corporateAction.pending = false;
         if (match) {
           corporateAction = {
             pending: true,
@@ -216,7 +217,7 @@ async function main() {
         }
       }
     } catch {
-      console.warn(`Could not fetch corporate-action status for ${symbol}; recording pending=false without asserting certainty.`);
+      console.warn(`Could not fetch corporate-action status for ${symbol}; recording unavailable.`);
     }
 
     symbolEntries[symbol] = {
@@ -263,7 +264,7 @@ async function main() {
     verifiedAt: new Date().toISOString(),
     verifiedAtBlock: blockNumber.toString(),
     verifiedAtBlockHash: blockHash,
-    rpcUrlUsed: robinhoodChain.rpcUrls.default.http[0],
+    rpcSource: process.env.RH_RPC_URL ? "configured (URL redacted)" : "public Robinhood RPC",
     core: {
       usdg: { address: CORE_ADDRESSES.usdg, decimals: 6, symbol: "USDG", source: "FairTick_PRD.md §7, bytecode-verified live" },
       weth: { address: CORE_ADDRESSES.weth, decimals: 18, symbol: "WETH", source: "FairTick_PRD.md §7, bytecode-verified live" },
@@ -280,7 +281,7 @@ async function main() {
   console.log(`\nWrote ${outPath}`);
 }
 
-main().catch((err) => {
-  console.error(err);
+main().catch(() => {
+  console.error("Registry resolution failed; no new verification claim. RPC URLs and credentials are omitted.");
   process.exit(1);
 });

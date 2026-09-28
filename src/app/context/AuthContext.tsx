@@ -1,0 +1,15 @@
+"use client";
+import React,{createContext,useContext,useState,useEffect,useCallback} from 'react';
+export interface HealthState {executionEnabled:boolean;network?:string;chainId?:number;networkLabel?:string;environment?:string;marketData?:string;symbol?:string;notice?:string|null;defaultClosedPolicy?:'WAIT'|'ALLOW';operatorConfigured:boolean;senderPresent:boolean;servKeyPresent:boolean;worker?:{active:boolean;lastSeen:number|null;executionEnabled:boolean};explorerUrl?:string|null;}
+interface Auth {secret:string;isAuthenticated:boolean;loading:boolean;health:HealthState|null;login:(code:string)=>Promise<void>;logout:()=>Promise<void>;api:<T>(path:string,method?:string,data?:unknown)=>Promise<T>;refreshHealth:()=>Promise<void>;}
+const Context=createContext<Auth|null>(null);
+export function AuthProvider({children}:{children:React.ReactNode}){
+ const [isAuthenticated,setAuthenticated]=useState(false),[loading,setLoading]=useState(true),[health,setHealth]=useState<HealthState|null>(null);
+ const refreshHealth=useCallback(async()=>{try{const r=await fetch('/api/health');setHealth(r.ok?await r.json():null);}catch{setHealth(null);}},[]);
+ useEffect(()=>{try{sessionStorage.removeItem('fairtick_operator_secret');localStorage.removeItem('fairtick_operator_secret');}catch{} Promise.all([refreshHealth(),fetch('/api/session').then(r=>setAuthenticated(r.ok)).catch(()=>setAuthenticated(false))]).finally(()=>setLoading(false));const t=setInterval(refreshHealth,15000);return()=>clearInterval(t);},[refreshHealth]);
+ const login=useCallback(async(code:string)=>{let r:Response;try{r=await fetch('/api/session',{method:'POST',headers:{Authorization:`Bearer ${code}`}});}catch{throw new Error('Service unavailable. Please try again.');}if(!r.ok)throw new Error(r.status===401?'Invalid access code. Use the code provided by the workspace owner.':'Workspace service unavailable. See owner setup.');setAuthenticated(true);},[]);
+ const logout=useCallback(async()=>{const r=await fetch('/api/session',{method:'DELETE'});if(r.ok||r.status===401){setAuthenticated(false);window.location.assign('/access');}else throw new Error('Sign-out failed. Please retry.');},[]);
+ const api=useCallback(async<T,>(path:string,method='GET',data?:unknown):Promise<T>=>{let r:Response;try{r=await fetch(path,{method,headers:{'Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})});}catch{throw new Error('Service unavailable. Your input has been preserved.');}const json=await r.json().catch(()=>({}));if(r.status===401){setAuthenticated(false);window.location.assign('/access?reason=expired&next='+encodeURIComponent(window.location.pathname));throw new Error('Session expired. Sign in again.');}if(!r.ok)throw new Error(json.error||'Request failed. Please retry.');return json as T;},[]);
+ return <Context.Provider value={{secret:'',isAuthenticated,loading,health,login,logout,api,refreshHealth}}>{children}</Context.Provider>;
+}
+export function useAuth(){const value=useContext(Context);if(!value)throw new Error('Missing AuthProvider');return value;}

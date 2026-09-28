@@ -1,0 +1,272 @@
+{
+  "observedAt": "2026-09-28T09:52:13.659Z",
+  "network": "Robinhood Chain testnet (46630)",
+  "chainId": 46630,
+  "wallet": "0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0",
+  "remainingNativeBalanceWei": "1953543270000000",
+  "status": "COMPLETED",
+  "orderPath": "Browser UI -> private order API -> independent worker",
+  "browserClosedBeforeWorker": true,
+  "servCalls": 1,
+  "contracts": {
+    "quote": {
+      "address": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79"
+    },
+    "token": {
+      "address": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05"
+    },
+    "feed": {
+      "address": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0xa992D490b09d8511BfB70F65BDE1b543F242058A"
+    },
+    "router": {
+      "address": "0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da",
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da"
+    },
+    "pool": {
+      "address": "0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46",
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46"
+    },
+    "quoter": {
+      "address": "0x65C97C0e0F76944B6b9743893b014c42cee8a228",
+      "explorer": "https://explorer.testnet.chain.robinhood.com/address/0x65C97C0e0F76944B6b9743893b014c42cee8a228"
+    }
+  },
+  "servDecision": {
+    "origin": "serv",
+    "action": "PROPOSE_EXECUTION",
+    "outcome": "RESERVED_FOR_TESTNET_EXECUTION",
+    "label": "REAL SERV CALL ON LIVE TESTNET MOCK MARKET DATA",
+    "model": "gpt-5.4-mini",
+    "httpStatus": 200,
+    "latencyMs": 11216,
+    "usage": {
+      "prompt_tokens": 1707,
+      "completion_tokens": 98,
+      "total_tokens": 1805,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    }
+  },
+  "applicationDecision": {
+    "action": "TAKE",
+    "authorization": "TESTNET_ONLY"
+  },
+  "transaction": {
+    "hash": "0x6ff3ed3ac70b618b8ae7f244025a4a7177f2b4cea00b3ae5c8645c083be0ce16",
+    "explorer": "https://explorer.testnet.chain.robinhood.com/tx/0x6ff3ed3ac70b618b8ae7f244025a4a7177f2b4cea00b3ae5c8645c083be0ce16",
+    "blockNumber": "125524242",
+    "blockHash": "0x4c6b60529c3ad2bd3c2a29f9ee2779104432e9df54a3e285d97a6db53bab80a2",
+    "included": true,
+    "finalized": true,
+    "outcome": "SETTLED"
+  },
+  "amounts": {
+    "spentBaseUnits": "25000000",
+    "spent": "25 mUSDG",
+    "receivedBaseUnits": "111043223588669236",
+    "received": "0.111043223588669236 mNVDA"
+  },
+  "verification": {
+    "settlementVerified": true,
+    "mandateComplianceVerified": true,
+    "gasCostVerified": true,
+    "feeMethod": "ARBITRUM_NITRO_GAS_USED_TIMES_EFFECTIVE_GAS_PRICE",
+    "actualTotalFeeWei": "1522740000000",
+    "receiptFields": {
+      "status": "1",
+      "blockNumber": "125524242",
+      "blockHash": "0x4c6b60529c3ad2bd3c2a29f9ee2779104432e9df54a3e285d97a6db53bab80a2",
+      "gasUsed": "152274",
+      "effectiveGasPriceWei": "10000000",
+      "gasUsedForL1": "15244",
+      "finalizedHead": "125630968"
+    },
+    "calculation": {
+      "semantics": "Nitro gasUsed includes the parent-chain posting component expressed in child-chain gas units; gasUsedForL1 is a subset and is not added again.",
+      "formula": "gasUsed * effectiveGasPrice",
+      "totalFeeWei": "1522740000000",
+      "parentPostingSubsetWei": "152440000000",
+      "childComputeSubsetWei": "1370300000000",
+      "subsetSumWei": "1522740000000",
+      "explorerReportedWei": "1522740000000",
+      "matchesExplorer": true
+    },
+    "complianceChecks": [
+      {
+        "key": "transaction_identity",
+        "label": "Transaction identity",
+        "status": "PASS",
+        "actual": "chain=46630; hash=0x6ff3ed3ac70b618b8ae7f244025a4a7177f2b4cea00b3ae5c8645c083be0ce16; from=0x2a432dbe5db0a6b2aa0535e6592493679a26c9a0; to=0x32eb0c9c0a74e00fd5798b172c962dc7dfa6f2da; nonce=14; value=0",
+        "required": "chain=46630; hash=0x6ff3ed3ac70b618b8ae7f244025a4a7177f2b4cea00b3ae5c8645c083be0ce16; from=0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0; to=0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da; nonce=14; value=0",
+        "scope": "settlement"
+      },
+      {
+        "key": "canonical_inclusion",
+        "label": "Canonical inclusion",
+        "status": "PASS",
+        "actual": "receipt=0x4c6b60529c3ad2bd3c2a29f9ee2779104432e9df54a3e285d97a6db53bab80a2; canonical=0x4c6b60529c3ad2bd3c2a29f9ee2779104432e9df54a3e285d97a6db53bab80a2",
+        "required": "matching block hashes and no removed logs",
+        "scope": "settlement"
+      },
+      {
+        "key": "finality",
+        "label": "Finality",
+        "status": "PASS",
+        "actual": "finalized",
+        "required": "finalized block at or above inclusion block",
+        "scope": "settlement"
+      },
+      {
+        "key": "fee_verification",
+        "label": "Actual transaction fee",
+        "status": "PASS",
+        "actual": "1522740000000 wei via ARBITRUM_NITRO_GAS_USED_TIMES_EFFECTIVE_GAS_PRICE",
+        "required": "transaction-specific total fee from supported receipt semantics",
+        "scope": "fee"
+      },
+      {
+        "key": "calldata_identity",
+        "label": "Reserved calldata",
+        "status": "PASS",
+        "actual": "calldata hash 0x2aac8a0459bdff35c7d590099fddbdaa3e568af4f4d08dcfd2d774f0071d5755",
+        "required": "reserved calldata hash 0x2aac8a0459bdff35c7d590099fddbdaa3e568af4f4d08dcfd2d774f0071d5755",
+        "scope": "settlement"
+      },
+      {
+        "key": "transaction_execution",
+        "label": "Transaction execution",
+        "status": "PASS",
+        "actual": "success",
+        "required": "successful execution",
+        "scope": "settlement"
+      },
+      {
+        "key": "route_constraints",
+        "label": "Allowlisted route and signed bounds",
+        "status": "PASS",
+        "actual": "tokenIn=0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79; tokenOut=0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05; recipient=0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0; fee=500; amountIn=25000000; minimumOut=110944694070006102",
+        "required": "tokenIn=0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79; tokenOut=0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05; recipient=0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0; fee=500; amountIn=25000000; minimumOut=110944694070006102",
+        "scope": "mandate"
+      },
+      {
+        "key": "token_settlement",
+        "label": "Token settlement and pool provenance",
+        "status": "PASS",
+        "actual": "swaps=1; spent=25000000; poolInput=25000000; received=111043223588669236; poolOutput=111043223588669236",
+        "required": "one allowlisted pool swap; wallet transfers equal pool amounts",
+        "scope": "settlement"
+      },
+      {
+        "key": "amount_in",
+        "label": "Authorized input amount",
+        "status": "PASS",
+        "actual": "25000000 base units",
+        "required": "exactly 25000000 base units",
+        "scope": "mandate"
+      },
+      {
+        "key": "partial_fill_policy",
+        "label": "Partial-fill policy",
+        "status": "PASS",
+        "actual": "25000000 of 25000000 base units spent; partialFillAllowed=false",
+        "required": "full reserved amount required",
+        "scope": "mandate"
+      },
+      {
+        "key": "minimum_output",
+        "label": "Minimum token output",
+        "status": "PASS",
+        "actual": "111043223588669236 base units",
+        "required": "at least 110944694070006102 base units",
+        "scope": "mandate"
+      },
+      {
+        "key": "execution_deadline",
+        "label": "Signed execution deadline",
+        "status": "PASS",
+        "actual": "block timestamp 1790569506",
+        "required": "at or before 1790569543",
+        "scope": "mandate"
+      },
+      {
+        "key": "mandate_expiry",
+        "label": "Mandate expiry",
+        "status": "PASS",
+        "actual": "block timestamp 1790569506",
+        "required": "before 1790573082",
+        "scope": "mandate"
+      },
+      {
+        "key": "intent_fee_bound",
+        "label": "Reserved transaction fee bound",
+        "status": "PASS",
+        "actual": "1522740000000 wei",
+        "required": "at most 2274432000000 wei",
+        "scope": "mandate"
+      },
+      {
+        "key": "order_gas_cap",
+        "label": "Order gas cap",
+        "status": "PASS",
+        "actual": "1522740000000 wei cumulative",
+        "required": "at most 1000000000000000 wei",
+        "scope": "mandate"
+      },
+      {
+        "key": "maximum_price",
+        "label": "Maximum effective price",
+        "status": "PASS",
+        "actual": "225137556 mUSDG base units per whole token",
+        "required": "at most 230000000 mUSDG base units per whole token",
+        "scope": "mandate"
+      },
+      {
+        "key": "inclusion_reference",
+        "label": "Reference evidence at inclusion",
+        "status": "PASS",
+        "actual": "committed round 2 with inclusion snapshot present",
+        "required": "inclusion-block reference snapshot retained; informational, not continuous oracle enforcement",
+        "scope": "settlement"
+      }
+    ],
+    "explorerFee": {
+      "source": "https://explorer.testnet.chain.robinhood.com/tx/0x6ff3ed3ac70b618b8ae7f244025a4a7177f2b4cea00b3ae5c8645c083be0ce16",
+      "status": "ok",
+      "fee": {
+        "type": "actual",
+        "value": "1522740000000"
+      },
+      "gasUsed": "152274",
+      "gasPrice": "10000000"
+    }
+  },
+  "reference": {
+    "source": "Operator-set fixture; not market data or an official oracle",
+    "feed": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+    "round": "2",
+    "answer": "22500000000 with 8 decimals",
+    "updatedAt": "1790569465",
+    "blockHash": "0x4c6b60529c3ad2bd3c2a29f9ee2779104432e9df54a3e285d97a6db53bab80a2"
+  },
+  "mockAssets": {
+    "quote": "mUSDG - FairTick mock token with no value",
+    "asset": "mNVDA - FairTick mock token with no value"
+  },
+  "priceSource": "Operator-set mock feed (225.00000000 mUSDG per mNVDA); not market data, Chainlink, or an official oracle",
+  "liquiditySource": "Operator-seeded controlled mock liquidity",
+  "notes": [
+    "TESTNET_MOCK_MARKET_RECEIPT: mock tokens with no value; not a stock purchase and not market data",
+    "COMMITTED_REFERENCE_ROUND_NOT_CONTINUOUS_ORACLE_ENFORCEMENT"
+  ]
+}

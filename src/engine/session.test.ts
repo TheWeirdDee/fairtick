@@ -52,11 +52,15 @@ describe("sessionAt", () => {
     expect(s.name).toBe("POST");
   });
 
-  it("never emits HOLIDAY when the holiday list is empty", () => {
-    // A real US market holiday (Thanksgiving 2026-11-26) but not in
-    // KNOWN_MARKET_HOLIDAYS (deliberately empty until verified) — must fall
-    // through to ordinary weekday classification, not guess HOLIDAY.
+  it("recognizes verified Thanksgiving closure", () => {
     const s = sessionAt(new Date("2026-11-26T15:00:00Z")); // 10:00 EST Thu
-    expect(s.name).not.toBe("HOLIDAY");
+    expect(s.name).toBe("HOLIDAY");
+  });
+  it("closes at 13:00 ET on the day after Thanksgiving", () => {
+    expect(sessionAt(new Date("2026-11-27T17:59:59Z")).name).toBe("REGULAR");
+    expect(sessionAt(new Date("2026-11-27T18:00:00Z")).name).toBe("POST");
+  });
+  it("does not assume unsupported calendar coverage is open", () => {
+    expect(sessionAt(new Date("2027-01-04T15:00:00Z")).name).toBe("UNKNOWN");
   });
 });

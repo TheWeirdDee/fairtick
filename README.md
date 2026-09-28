@@ -1,55 +1,56 @@
 # FairTick
 
-FairTick checks a Robinhood Chain stock-token purchase against your own written limits — max spend, max price vs the official reference, how stale a feed you'll accept, which market sessions you'll trade in — and only executes when every rule passes. It can attempt one purchase now, or keep working an order until the budget is filled, a deadline arrives, or you cancel.
+An owner-operated order workspace: confirm a token budget, maximum price and expiry; let an independent worker check conditions; inspect application-rule decisions, bounded SERV proposals and transaction evidence.
 
-**Status: foundation under active build, pre-submission.** This README says exactly what is real today and what is not yet built. Live URL: none yet (not deployed). Eval: not run yet — no `/proof` numbers exist to quote.
+**Mainnet signing is disabled. Testnet signing is implemented only for explicitly labeled FairTick mock tokens and an operator-set price.** One purchase was finalized and verified on Robinhood Chain public testnet: [transaction `0x6ff3ed3a...be0ce16`](https://explorer.testnet.chain.robinhood.com/tx/0x6ff3ed3ac70b618b8ae7f244025a4a7177f2b4cea00b3ae5c8645c083be0ce16). It spent 25 valueless mock mUSDG and received 0.111043223588669236 valueless mock mNVDA through operator-seeded controlled liquidity. The 225 reference price came from an operator-set mock feed. This was not an official stock-token market, Chainlink market data, or official Uniswap liquidity, and it does not establish mainnet readiness.
 
-## What's actually verified right now
+## Reproduce locally
 
-Everything in [`DATA-CONTRACT.md`](DATA-CONTRACT.md) was produced by a live call against Robinhood Chain mainnet (chain id 4663) or an official Robinhood/Chainlink/Uniswap source on 2026-09-24, not assumed from documentation:
+Use Node 24 and npm. Do not configure a mainnet private key.
 
-- Chain ID, core contract bytecode (USDG, WETH, Multicall3, Uniswap V3 Factory/SwapRouter02), and a resolved QuoterV2 (missing from the original spec, found via Uniswap's own deployments doc).
-- NVDA token, its Chainlink `RHNVDA / USD` feed, and its Uniswap V3 pool — selected by actually comparing live liquidity across every fee tier and quote-token pairing, not assumed. The NVDA/USDG 0.05% pool (~$2.8M depth) is the route.
-- A live, actual-size executable quote (`QuoterV2.quoteExactInputSingle`, not pool spot price) at several sizes, with measured price impact and gas.
-- The exact on-chain revert (`STF`) proving what a funded wallet would need to supply, since no operator wallet is configured yet.
-- A genuine pending NVDA corporate action (cash dividend, processing 2026-10-01) and a live trading-halt read, both from Robinhood's official API — not fixtures.
-
-Run `pnpm resolve-registry` to redo this discovery live and regenerate `data/registry.json`. Run `pnpm smoke-quote` (or `tsx scripts/smoke-quote.ts`) to pull one live `MarketSnapshot` end to end.
-
-## What's built
-
-- Domain types reconciling the original PRD with the merged product plan (`src/engine/types.ts`).
-- A pure `SessionClock` (`src/engine/session.ts`) — no network, no LLM, verified against the spec's own America/New_York test vectors.
-- `premiumBps` math (`src/engine/premium.ts`) as the single source of truth no decider may override.
-- The live `QuoteEngine` (`src/engine/quote.ts`) — feed + actual-size quote + session, all from chain, with an explicit `UNABLE/STALE/PAUSED/UNAVAILABLE` reference-status model instead of silently substituting a price.
-- The deterministic threshold bot / hard-gate validator (`src/engine/thresholdBot.ts`) — the rules-based baseline every model-driven decision is measured against and gated by.
-- 27 passing tests (`pnpm test`) covering session boundaries, premium math, and one case per PRD §18 fixture bucket.
-
-## What's not built yet
-
-- SERV decider, raw-model comparison, and the `/proof` eval campaign — blocked on `SERV_API_KEY`, which is not present in this environment. No SERV call has been made; none is claimed.
-- Durable order storage, the managed-order worker, partial fills, cancellation/expiry, and receipt reconstruction (merged plan §6-§9).
-- Any signed transaction — blocked on an operator wallet (`RH_PRIVATE_KEY`). No live trade has been executed; none is claimed.
-- The desk, order, receipt, and proof pages (no Next.js UI exists yet — this is intentionally engine-first per the build order).
-
-## Setup
-
-```bash
-npm install
-cp .env.example .env.local
-# fill in SERV_API_KEY / RH_PRIVATE_KEY / OPERATOR_SECRET only if you have them —
-# the deterministic engine and live quotes work without any of them.
-npm run resolve-registry   # re-verify live and regenerate data/registry.json
-npm test                   # 27 tests, no credentials required
-npm run smoke-quote        # one live end-to-end MarketSnapshot
+```sh
+npm ci
+npm run setup-local
+npm run db:migrate
+npm run build
+npm start
+# Separate terminal, same persistent database:
+npm run worker
 ```
 
-## Scope for this release
+Open http://localhost:3000. Public routes need no code. Owner sign-in is `/access`; `setup-local` creates OPERATOR_SECRET in the ignored `.env.local` only if absent. Read it locally; never publish it. The browser exchanges the code for an eight-hour HttpOnly session cookie. Sign-out revokes it. Private APIs also accept the owner Bearer credential for local tooling.
 
-One verified stock token (NVDA). BUY only. USDG input. One route (Uniswap V3, NVDA/USDG 0.05%). One operator-controlled execution wallet, not yet configured. See [`FairTick_Merged_Product_Plan.md`](FairTick_Merged_Product_Plan.md) for the full reconciled plan and [`FairTick_PRD.md`](FairTick_PRD.md) for the original spec (the merged plan takes precedence where they differ).
+Mainnet observation uses NVDA/USDG and blocks on missing/stale prerequisites. An API key alone does not establish SERV account eligibility or sufficient credit. Real SERV evidence from September 25 is recorded on **synthetic market data**, with a validated proposal and no transaction authority.
 
-## Limitations on record
+## Testnet mock workflow
 
-- USDG is assumed ≈ $1.00 for any USD display derived from a USDG amount; no USDG/USD feed exists in the Robinhood feed directory. Native USDG-unit bounds are used wherever possible instead.
-- No official Robinhood brokerage MCP, mint/redeem, or account access is used or implied anywhere in this repo.
-- Nothing here claims to identify a guaranteed bargain, predict a price, or prove a squeeze from a price divergence.
+```sh
+npm run testnet:compile
+npm run testnet:deploy   # READ-ONLY plan, wallet balance, nonce and funding allowance
+```
+
+The separate testnet wallet, registry and database must never reuse mainnet configuration. Mock mUSDG/mNVDA, an operator-set feed and operator-seeded pool are not official stock tokens or a real market. Faucet funds are valueless. Deployment, setup, approval, price refresh and execution need separate broadcast authorization before using any `--broadcast` command or enabling the signer.
+
+After separately authorized deployment, start `npm run testnet:web` and the independent `npm run testnet:worker`. The worker requires FAIRTICK_TESTNET_EXECUTE=true for signing. The web process does not need a private key. See [OPERATIONS.md](OPERATIONS.md) and [PUBLIC-TESTNET-PLAN.md](PUBLIC-TESTNET-PLAN.md).
+
+## Verification
+
+```sh
+npm test
+npm run typecheck
+npm run build
+npm run verify:browser
+npm run testnet:local-e2e -- --planner stand-in --browser
+```
+
+The last command requires `.tools/foundry/anvil.exe`, deploys only to loopback, uses an ephemeral wallet and a clearly synthetic planner, and spends no SERV credit. It checks the actual UI, worker logic and local receipt; it cannot satisfy the public-testnet gate. `verify:browser` uses installed Chrome by default (PLAYWRIGHT_CHANNEL=msedge is supported), isolated synthetic orders, read-only live RPC and a separate worker process. Neither command publishes the owner database.
+
+The retained public-testnet record is `public/evidence/public-testnet-status.json`. It documents one finalized transaction using valueless FairTick mock mUSDG/mNVDA, an operator-set price and controlled liquidity. Token settlement, the transaction-specific actual fee, and all recorded mandate checks are verified. This evidence does not establish mainnet readiness.
+
+## Architecture and boundaries
+
+Next.js web and a separate Node worker share SQLite WAL on one host with a persistent local volume. Migrations preserve existing rows. Immutable mandates, wallet-level pending constraints, nonce ownership, signed-byte recovery and pending reservations prevent an unknown outcome from authorizing a second fill. A stale unsigned recovery job requires operator review; it never silently releases funds. Receipt settlement, mandate compliance, fees and finality are separate findings.
+
+[Public docs source](src/app/docs) covers access, orders, SERV, networks, receipts, self-hosting and limitations. [DATA-CONTRACT.md](DATA-CONTRACT.md) preserves dated dependency observations. [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) is the gate checklist. [SUBMISSION.md](SUBMISSION.md) contains draft entry text and demo material. [OPERATIONS.md](OPERATIONS.md) describes deployment, recovery and data handling.
+
+The public source repository is [github.com/TheWeirdDee/fairtick](https://github.com/TheWeirdDee/fairtick). No live deployment or mainnet readiness is claimed. This release has no signup, multi-user isolation, billing or validated revenue model.

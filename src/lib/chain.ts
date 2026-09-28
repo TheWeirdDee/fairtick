@@ -1,6 +1,8 @@
+import "./env.js";
 import { createPublicClient, http, type Chain } from "viem";
+import { activeNetwork, MAINNET_CHAIN_ID, MAINNET_CORE_ADDRESSES } from "./network.js";
 
-export const ROBINHOOD_CHAIN_ID = 4663;
+export const ROBINHOOD_CHAIN_ID = MAINNET_CHAIN_ID;
 
 export const robinhoodChain: Chain = {
   id: ROBINHOOD_CHAIN_ID,
@@ -15,35 +17,45 @@ export const robinhoodChain: Chain = {
 };
 
 // Verified live against chain 4663 on 2026-09-24 at block 71464115. See DATA-CONTRACT.md.
-export const CORE_ADDRESSES = {
-  usdg: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-  weth: "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
-  multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11",
-  uniswapV3Factory: "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA",
-  uniswapV3SwapRouter02: "0xCaf681a66D020601342297493863E78C959E5cb2",
-  uniswapV3QuoterV2: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7",
-} as const;
+// Mainnet only: none but Multicall3 has code on testnet 46630 (checked 2026-09-26).
+export const CORE_ADDRESSES = MAINNET_CORE_ADDRESSES;
 
 export const USDG_DECIMALS = 6;
 
-let cachedClient: ReturnType<typeof createPublicClient> | null = null;
+/** The active network's chain definition (mainnet unless FAIRTICK_NETWORK=testnet). */
+export function activeChain(): Chain {
+  const net = activeNetwork();
+  if (net.name === "mainnet") return robinhoodChain;
+  return {
+    id: net.chainId,
+    name: net.label,
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    rpcUrls: { default: { http: [net.rpcUrl] } },
+    testnet: true,
+  };
+}
+
+const clients = new Map<string, ReturnType<typeof createPublicClient>>();
 
 export function getPublicClient() {
-  if (!cachedClient) {
-    cachedClient = createPublicClient({
-      chain: robinhoodChain,
-      transport: http(robinhoodChain.rpcUrls.default.http[0]),
-    });
+  const chain = activeChain();
+  const url = chain.rpcUrls.default.http[0]!;
+  const key = `${chain.id}:${url}`;
+  let client = clients.get(key);
+  if (!client) {
+    client = createPublicClient({ chain, transport: http(url, { timeout: 15_000, retryCount: 1 }) });
+    clients.set(key, client);
   }
-  return cachedClient;
+  return client;
 }
 
 export async function assertChainId(): Promise<void> {
   const client = getPublicClient();
+  const expected = activeNetwork().chainId;
   const chainId = await client.getChainId();
-  if (chainId !== ROBINHOOD_CHAIN_ID) {
+  if (chainId !== expected) {
     throw new Error(
-      `Chain ID mismatch: expected ${ROBINHOOD_CHAIN_ID} (Robinhood Chain), got ${chainId}. Refusing to proceed — never sign or quote against the wrong chain.`,
+      `Chain ID mismatch: expected ${expected} (${activeNetwork().label}), got ${chainId}. Refusing to proceed — never sign or quote against the wrong chain.`,
     );
   }
 }

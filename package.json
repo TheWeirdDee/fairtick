@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -15,7 +15,26 @@
     "capture": "tsx scripts/capture-snapshot.ts",
     "eval": "tsx scripts/eval.ts",
     "worker": "tsx scripts/worker.ts",
-    "typecheck": "tsc --noEmit"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "setup-local": "tsx scripts/setup-local.ts",
+    "probe-candidate": "tsx scripts/probe-candidate.ts",
+    "smoke-orders": "tsx scripts/smoke-orders.ts",
+    "verify-serv-path": "tsx scripts/verify-serv-path.ts",
+    "probe-l1-fee": "tsx scripts/probe-l1-fee.ts",
+    "probe-feed-history": "tsx scripts/probe-feed-history.ts",
+    "typecheck": "tsc --noEmit",
+    "testnet:wallet": "tsx scripts/testnet-wallet.ts",
+    "testnet:compile": "tsx scripts/testnet-compile.ts",
+    "testnet:deploy": "tsx scripts/testnet-deploy.ts",
+    "testnet:refresh-price": "tsx scripts/testnet-refresh-price.ts",
+    "testnet:demo": "tsx scripts/testnet-demo.ts",
+    "testnet:worker": "tsx scripts/testnet-worker.ts",
+    "testnet:web": "tsx scripts/testnet-web.ts",
+    "testnet:local-e2e": "tsx scripts/testnet-local-e2e.ts",
+    "testnet:probe": "tsx scripts/testnet-probe.ts",
+    "verify:browser": "tsx scripts/release-browser.ts",
+    "export:evidence": "tsx scripts/export-evidence.ts",
+    "worker:health": "tsx scripts/worker-health.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
@@ -28,10 +47,12 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "26.6.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "solc": "0.8.37",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.0.1"

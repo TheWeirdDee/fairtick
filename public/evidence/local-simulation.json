@@ -1,0 +1,30 @@
+{
+  "observedAt": "2026-09-27T22:55:45.100Z",
+  "label": "LOCAL DEVNET SIMULATION (anvil, chain id 46630, loopback). Not Robinhood testnet evidence and not market data. Mock tokens, mock price, controlled liquidity.",
+  "plannerMode": "SYNTHETIC STAND-IN PLANNER",
+  "publicTestnet": false,
+  "settled": true,
+  "receipt": {
+    "transactionHash": "0xcfc4a23189666d6373243fdd228b7a92ebaac436c9140df609f07e93d0cfd2a9",
+    "blockNumber": "56",
+    "blockHash": "0x29418fcb57210075d8293654f47b81d3e51e6294a878017c66a26ecd4f7870d8",
+    "environment": {
+      "network": "LOCAL DEVNET (chain id 46630, not Robinhood testnet)",
+      "chainId": 46630,
+      "marketData": "TESTNET_MOCK",
+      "notice": "TESTNET DEMO: mock tokens (mUSDG, mNVDA), an operator-set mock price and operator-seeded (controlled) liquidity. Not USDG, not a Robinhood stock token, not Chainlink, not Uniswap, not market data. Tokens have no value."
+    },
+    "amountIn": "25000000",
+    "amountOut": "111043223588669236",
+    "gasWei": "865296156",
+    "gasCostVerified": true,
+    "feeMethod": "LOCAL_EVM_RECEIPT_GAS_TIMES_PRICE",
+    "settlementVerified": true,
+    "mandateComplianceVerified": true,
+    "finalized": true,
+    "notes": [
+      "TESTNET_MOCK_MARKET_RECEIPT: mock tokens with no value; not a stock purchase and not market data",
+      "COMMITTED_REFERENCE_ROUND_NOT_CONTINUOUS_ORACLE_ENFORCEMENT"
+    ]
+  }
+}

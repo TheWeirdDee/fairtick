@@ -1,0 +1,15 @@
+.git
+.next
+node_modules
+.env
+.env.*
+!.env.example
+.audit
+.tools
+.claude
+data/*.db*
+data/testnet/*.db*
+data/testnet/*.deploy-state.json
+data/evidence
+*.log
+*.tsbuildinfo

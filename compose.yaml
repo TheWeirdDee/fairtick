@@ -1,0 +1,32 @@
+services:
+  web:
+    build: .
+    image: fairtick:release
+    restart: unless-stopped
+    env_file: /etc/fairtick/web.env
+    environment:
+      DATABASE_PATH: /var/lib/fairtick/mainnet.db
+      TESTNET_DATABASE_PATH: /var/lib/fairtick/testnet.db
+    ports: ["127.0.0.1:3000:3000"]
+    volumes: ["fairtick-data:/var/lib/fairtick"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  worker:
+    image: fairtick:release
+    restart: unless-stopped
+    command: ["npm", "run", "worker"]
+    env_file: /etc/fairtick/worker.env
+    environment:
+      DATABASE_PATH: /var/lib/fairtick/mainnet.db
+      TESTNET_DATABASE_PATH: /var/lib/fairtick/testnet.db
+    volumes: ["fairtick-data:/var/lib/fairtick"]
+    healthcheck:
+      test: ["CMD", "node", "--import", "tsx", "scripts/worker-health.ts"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+volumes:
+  fairtick-data:

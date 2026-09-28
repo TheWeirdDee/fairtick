@@ -187,7 +187,7 @@ describe("decideThreshold — one packet per fixture bucket (PRD §18)", () => {
       snapshot: makeSnapshot({ premiumBps: -50 }),
       remainingBudgetUsdgBaseUnits: 25_000_000n,
     });
-    expect(d.action).toBe("TAKE");
-    expect(BigInt(d.sizeUsdgBaseUnits)).toBeLessThanOrEqual(5_000_000n);
+    expect(d.action).toBe("WAIT");
+    expect(d.reason).toContain("actual-size quote");
   });
 });

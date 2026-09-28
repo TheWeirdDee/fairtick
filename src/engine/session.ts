@@ -2,17 +2,15 @@ import type { Session, SessionName } from "./types.js";
 
 /**
  * US market holidays that fully close cash equities trading. Deliberately
- * empty until populated from a verified source (e.g. nyse.com's published
- * holiday calendar) for each year in use. The PRD is explicit that guessing
- * is worse than omitting: "Wrong holidays are worse than omitting them." An
- * unlisted holiday falls through to the ordinary weekday session logic below
- * (e.g. it will read as REGULAR/PRE/POST), which is the documented, honest
- * fallback rather than a fabricated HOLIDAY classification.
+ * sourced from NYSE's published 2026 calendar. Unsupported years return UNKNOWN
+ * under the merged plan, rather than assuming an uncovered weekday is open.
  */
 export const KNOWN_MARKET_HOLIDAYS: ReadonlySet<string> = new Set([
-  // "YYYY-MM-DD" in America/New_York local date. Populate from a verified
-  // source before relying on HOLIDAY classification in production.
+  "2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03", "2026-05-25",
+  "2026-06-19", "2026-07-03", "2026-09-07", "2026-11-26", "2026-12-25",
 ]);
+// https://www.nyse.com/trade/hours-calendars, checked 2026-09-24.
+const EARLY_CLOSES = new Set(["2026-11-27", "2026-12-24"]);
 
 const NY_TZ = "America/New_York";
 
@@ -70,13 +68,15 @@ export function sessionAt(date: Date): Session {
   const isWeekday = p.weekday >= 1 && p.weekday <= 5;
 
   const REGULAR_OPEN = 9 * 60 + 30; // 09:30
-  const REGULAR_CLOSE = 16 * 60; // 16:00
+  const REGULAR_CLOSE = (EARLY_CLOSES.has(localDateKey(p)) ? 13 : 16) * 60;
   const PRE_OPEN = 4 * 60; // 04:00
-  const POST_CLOSE = 20 * 60; // 20:00
+  const POST_CLOSE = (EARLY_CLOSES.has(localDateKey(p)) ? 17 : 20) * 60;
 
   let name: SessionName;
 
-  if (isWeekday && KNOWN_MARKET_HOLIDAYS.has(localDateKey(p))) {
+  if (p.year !== 2026) {
+    name = "UNKNOWN";
+  } else if (isWeekday && KNOWN_MARKET_HOLIDAYS.has(localDateKey(p))) {
     name = "HOLIDAY";
   } else if (
     // Friday 20:00 through Monday 04:00 is WEEKEND.

@@ -1,5 +1,11 @@
 # FairTick PRD
 
+> Historical specification. The accepted `FairTick_Merged_Product_Plan.md` and
+> `WORKING-SPEC.md` take precedence. In particular, three assets, SELL, spot-based
+> execution, filesystem-only orders, stripped comparison prompts, and claims
+> that SERV must outperform a correct deterministic gate are superseded.
+> The original text is preserved below and in git commit 0a5911d.
+
 **Product:** FairTick  
 **One line:** An execution desk for Robinhood Chain Stock Tokens that decides whether an off-hours or live print is a real discount, closed-market drift, or a squeeze — then swaps only when the mandate allows.  
 **Track:** SERV Hackathon Edition 01 — Mainnet & MCP  

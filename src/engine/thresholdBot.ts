@@ -11,10 +11,9 @@ export interface ThresholdBotInput {
 
 /**
  * Deterministic, model-free baseline decider (PRD §11) and — for the
- * managed-order path — the same logic doubles as the hard-gate validator
- * that runs immediately before signing (merged plan §4, "Code must:
- * Determine legal transitions... Enforce every mandate rule"). No network
- * or LLM calls. Every branch is a pure function of its inputs.
+ * legacy decision display only. This is NOT the signing gate: the strict
+ * executionValidator enforces integer transaction bounds and current state.
+ * No network or LLM calls. Every branch is a pure function of its inputs.
  */
 export function decideThreshold(input: ThresholdBotInput): DecisionPacket {
   const { mandate, snapshot } = input;
@@ -55,6 +54,11 @@ export function decideThreshold(input: ThresholdBotInput): DecisionPacket {
     confidence: "high",
   });
 
+  if (snapshot.session.name === "UNKNOWN" || snapshot.tradingHalt === null || snapshot.pendingCorporateAction === null) {
+    return unknown("Required session or asset status is unavailable.", ["MISSING_INPUT"]);
+  }
+  if (snapshot.pendingCorporateAction) return wait("Pending corporate action requires review.", ["CORPORATE_ACTION_PENDING"]);
+
   // 1. Reference must be usable at all.
   if (snapshot.referenceStatus === "UNAVAILABLE") {
     return unknown("Feed or executable quote is missing or invalid; refusing to guess.", ["FEED_MISSING", "MISSING_INPUT"]);
@@ -62,7 +66,7 @@ export function decideThreshold(input: ThresholdBotInput): DecisionPacket {
   if (snapshot.referenceStatus === "PAUSED") {
     return unknown("Reference feed is paused; no trade without a usable reference.", ["FEED_PAUSED"]);
   }
-  if (snapshot.feedPriceUsd === null || snapshot.executableQuote === null) {
+  if (snapshot.feedPriceUsd === null || !Number.isFinite(snapshot.feedPriceUsd) || snapshot.feedPriceUsd <= 0 || snapshot.executableQuote === null) {
     return unknown("Missing feed price or executable quote.", ["MISSING_INPUT"]);
   }
   if (snapshot.tradingHalt) {
@@ -78,7 +82,7 @@ export function decideThreshold(input: ThresholdBotInput): DecisionPacket {
   }
 
   const premiumBps = snapshot.premiumBps;
-  if (premiumBps === null) {
+  if (premiumBps === null || !Number.isFinite(premiumBps)) {
     return unknown("Premium could not be computed from this snapshot.", ["MISSING_INPUT"]);
   }
 
@@ -149,6 +153,10 @@ export function decideThreshold(input: ThresholdBotInput): DecisionPacket {
       `Permitted size ${size.toString()} USDG-base-units is below the mandate's minimum viable fill ${minViable.toString()}.`,
       ["SIZE_CAPPED"],
     );
+  }
+
+  if (size.toString() !== snapshot.executableQuote.inputUsdgBaseUnits) {
+    return wait("Obtain an actual-size quote for the permitted fill amount.", ["SIZE_CAPPED"]);
   }
 
   return {

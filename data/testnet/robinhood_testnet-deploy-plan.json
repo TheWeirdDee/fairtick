@@ -1,0 +1,218 @@
+{
+ "label": "TESTNET DEMO DEPLOYMENT PLAN: Robinhood Chain testnet (46630). TESTNET DEMO: mock tokens (mUSDG, mNVDA), an operator-set mock price and operator-seeded (controlled) liquidity. Not USDG, not a Robinhood stock token, not Chainlink, not Uniswap, not market data. Tokens have no value.",
+ "mode": "BROADCAST",
+ "chainId": 46630,
+ "rpcOrigin": "https://rpc.testnet.chain.robinhood.com",
+ "block": "125419033",
+ "blockTimestamp": 1790552695,
+ "wallet": {
+  "address": "0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0",
+  "balanceWei": "2000000000000000",
+  "balanceEth": "0.002",
+  "nonceLatest": 0,
+  "noncePending": 0
+ },
+ "gasPriceWei": "10000000",
+ "costUpperBoundWei": "124395180000000",
+ "costUpperBoundEth": "0.00012439518",
+ "costs": {
+  "deploymentsWei": "103395180000000",
+  "setupSevenCallsAllowanceWei": "21000000000000",
+  "approvalTokenAmount": "100 mUSDG",
+  "priceRefreshAllowanceWei": "3000000000000",
+  "orderGasCapWei": "1000000000000000",
+  "unspentReserveWei": "100000000000000",
+  "requiredWithOrderAndReserveWei": "1227395180000000",
+  "note": "Setup and refresh are allowances, not measured estimates before contracts exist. Re-estimate before each approved send; stop if cap exceeded."
+ },
+ "artifact": {
+  "compiler": "0.8.37+commit.f401782d.Emscripten.clang",
+  "sourceSha256": "3dc06b4f10911ef908714cbb521fe76e0ea729d7a6d82f811d3f4300034cbaf3"
+ },
+ "predictedAddresses": {
+  "quote": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+  "token": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+  "feed": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+  "router": "0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da",
+  "pool": "0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46",
+  "quoter": "0x65C97C0e0F76944B6b9743893b014c42cee8a228"
+ },
+ "transactions": [
+  {
+   "step": 0,
+   "nonce": 0,
+   "label": "Deploy mock quote token mUSDG (6 decimals)",
+   "to": "(contract creation)",
+   "predictedAddress": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+   "call": "DemoToken.constructor(FairTick Demo Mock USD (TESTNET, no value), mUSDG, 6)",
+   "dataBytes": 3151,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED",
+    "gas": "716826"
+   }
+  },
+  {
+   "step": 1,
+   "nonce": 1,
+   "label": "Deploy mock stock token mNVDA (18 decimals)",
+   "to": "(contract creation)",
+   "predictedAddress": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+   "call": "DemoToken.constructor(FairTick Demo Mock NVDA (TESTNET, no value), mNVDA, 18)",
+   "dataBytes": 3151,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED",
+    "gas": "716765"
+   }
+  },
+  {
+   "step": 2,
+   "nonce": 2,
+   "label": "Deploy mock price feed (operator-set)",
+   "to": "(contract creation)",
+   "predictedAddress": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+   "call": "DemoAggregator.constructor(MOCK mNVDA / USD (operator-set TESTNET demo price; not Chainlink, not market data))",
+   "dataBytes": 2351,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED",
+    "gas": "574756"
+   }
+  },
+  {
+   "step": 3,
+   "nonce": 3,
+   "label": "Deploy demo router (SwapRouter02-shaped calls)",
+   "to": "(contract creation)",
+   "predictedAddress": "0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da",
+   "call": "DemoRouter.constructor()",
+   "dataBytes": 3308,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED",
+    "gas": "837947"
+   }
+  },
+  {
+   "step": 4,
+   "nonce": 4,
+   "label": "Deploy controlled-liquidity pool mUSDG/mNVDA 0.05%",
+   "to": "(contract creation)",
+   "predictedAddress": "0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46",
+   "call": "DemoPool.constructor(0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79, 0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05, 500, 0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da)",
+   "dataBytes": 3761,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED",
+    "gas": "834644"
+   }
+  },
+  {
+   "step": 5,
+   "nonce": 5,
+   "label": "Deploy demo quoter (QuoterV2-shaped)",
+   "to": "(contract creation)",
+   "predictedAddress": "0x65C97C0e0F76944B6b9743893b014c42cee8a228",
+   "call": "DemoQuoter.constructor(0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da)",
+   "dataBytes": 1115,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED",
+    "gas": "295800"
+   }
+  },
+  {
+   "step": 6,
+   "nonce": 6,
+   "label": "Register pool with router",
+   "to": "0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da",
+   "predictedAddress": null,
+   "call": "DemoRouter.setPool(0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46)",
+   "dataBytes": 36,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  },
+  {
+   "step": 7,
+   "nonce": 7,
+   "label": "Seed pool: mint 225,000 mUSDG (mock)",
+   "to": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+   "predictedAddress": null,
+   "call": "DemoToken.mint(0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46, 225000000000)",
+   "dataBytes": 68,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  },
+  {
+   "step": 8,
+   "nonce": 8,
+   "label": "Seed pool: mint 1,000 mNVDA (mock)",
+   "to": "0x8Da66d02E99E3c6E7a7684Ecc29D8278bBA17E05",
+   "predictedAddress": null,
+   "call": "DemoToken.mint(0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46, 1000000000000000000000)",
+   "dataBytes": 68,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  },
+  {
+   "step": 9,
+   "nonce": 9,
+   "label": "Sync pool reserves",
+   "to": "0xDF08Cf5486F4b9f8ABA77b3c823e816cE60a5B46",
+   "predictedAddress": null,
+   "call": "DemoPool.sync()",
+   "dataBytes": 4,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  },
+  {
+   "step": 10,
+   "nonce": 10,
+   "label": "Mint 100 mUSDG (mock) to the testnet wallet",
+   "to": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+   "predictedAddress": null,
+   "call": "DemoToken.mint(0x2a432DbE5Db0A6b2Aa0535e6592493679A26c9a0, 100000000)",
+   "dataBytes": 68,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  },
+  {
+   "step": 11,
+   "nonce": 11,
+   "label": "Approve demo router for 100 mUSDG (mock token only)",
+   "to": "0x31D04794C7eEe6Ca9f1b072DBb7d01E19Fa17e79",
+   "predictedAddress": null,
+   "call": "DemoToken.approve(0x32eB0c9c0A74e00fd5798B172C962dc7DFA6f2Da, 100000000)",
+   "dataBytes": 68,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  },
+  {
+   "step": 12,
+   "nonce": 12,
+   "label": "Set mock reference price 225 (8 decimals)",
+   "to": "0xa992D490b09d8511BfB70F65BDE1b543F242058A",
+   "predictedAddress": null,
+   "call": "DemoAggregator.updateAnswer(22500000000)",
+   "dataBytes": 36,
+   "value": "0",
+   "estimate": {
+    "status": "ESTIMATED_DURING_BROADCAST (depends on earlier steps)"
+   }
+  }
+ ],
+ "resume": null
+}

@@ -11,4 +11,15 @@ data/*.db-shm
 data/runs/*.json
 !data/runs/.gitkeep
 data/eval/latest.json
+data/testnet/*.db*
+.tools/
 .DS_Store
+
+# Private recovery payloads and release test logs
+data/testnet/*.deploy-state.json
+.audit/
+.env.*
+!.env.example
+.claude/
+data/evidence/
+contracts/testnet/artifacts/

@@ -61,7 +61,7 @@ export interface Mandate {
   mandateHash: Hash; // sha256/keccak of the canonical mandate JSON, computed at confirmation
 }
 
-export type SessionName = "REGULAR" | "PRE" | "POST" | "OVERNIGHT" | "WEEKEND" | "HOLIDAY";
+export type SessionName = "REGULAR" | "PRE" | "POST" | "OVERNIGHT" | "WEEKEND" | "HOLIDAY" | "UNKNOWN";
 
 export interface Session {
   name: SessionName;
@@ -78,7 +78,7 @@ export type ReferenceStatus = "USABLE" | "STALE" | "PAUSED" | "UNAVAILABLE";
  */
 export interface MarketSnapshot {
   capturedAt: string; // ISO
-  chainId: 4663;
+  chainId: 4663 | 46630;
   blockNumber: string;
   blockHash: Hash;
   symbol: string;
@@ -92,6 +92,12 @@ export interface MarketSnapshot {
   feedPriceUsd: number | null; // already multiplier-adjusted; null if unusable
   feedDecimals: number;
   feedRoundId: string | null;
+  feedAnswerRaw?: string | null;
+  blockTimestamp?: number;
+  oraclePaused?: boolean | null;
+  pendingMultiplierRaw?: string | null;
+  multiplierEffectiveAt?: number | null;
+  multiplierState?: "CONSISTENT" | "SCHEDULED" | "INCONSISTENT" | "UNAVAILABLE";
   feedUpdatedAt: number | null; // unix seconds
   feedAgeSeconds: number | null;
 
@@ -110,10 +116,16 @@ export interface MarketSnapshot {
 
   poolTvlUsdgSide: number | null;
   tradingHalt: boolean | null;
-  pendingCorporateAction: boolean;
+  pendingCorporateAction: boolean | null;
 
   session: Session;
   notes: string[];
+  // Set by the producer. Only the live quote adapter's snapshots are also attested.
+  provenance?: "LIVE" | "SYNTHETIC" | "REPLAY";
+  // Market-data class of the source contracts. TESTNET_MOCK = demo mock tokens, operator-set
+  // mock price and controlled liquidity: live chain reads, never official market data.
+  marketData?: "LIVE_OFFICIAL" | "TESTNET_MOCK";
+  network?: string;
 }
 
 export type Action = "TAKE" | "WAIT" | "REFUSE" | "UNKNOWN";

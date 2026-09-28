@@ -1,8 +1,10 @@
 import { parseAbi, formatUnits } from "viem";
 import { assertChainId, getPublicClient, USDG_DECIMALS } from "../lib/chain.js";
-import { getVerifiedSymbol } from "../lib/registry.js";
+import { getVerifiedSymbol, routeContracts } from "../lib/registry.js";
+import { activeNetwork } from "../lib/network.js";
 import { computePremiumBps } from "./premium.js";
 import { sessionAt } from "./session.js";
+import { attestLive } from "./provenance.js";
 import type { MarketSnapshot, ReferenceStatus } from "./types.js";
 
 const FEED_ABI = parseAbi([
@@ -16,13 +18,16 @@ const POOL_ABI = parseAbi([
   "function token1() view returns (address)",
 ]);
 
-const ERC20_ABI = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+const TOKEN_ABI = parseAbi([
+  "function uiMultiplier() view returns (uint256)",
+  "function oraclePaused() view returns (bool)",
+  "function newUIMultiplier() view returns (uint256)",
+  "function effectiveAt() view returns (uint256)",
+]);
 
 const QUOTER_ABI = parseAbi([
   "function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96)) returns (uint256 amountOut,uint160 sqrtPriceX96After,uint32 initializedTicksCrossed,uint256 gasEstimate)",
 ]);
-
-const QUOTER_ADDRESS = "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as const;
 
 // Default quote size when the caller doesn't specify one (quote-only calls
 // before a mandate exists). Matches the PRD demo mandate default.
@@ -32,6 +37,7 @@ export interface GetMarketSnapshotParams {
   symbol: string;
   inputUsdgBaseUnits?: bigint;
   now?: Date;
+  maxFeedAgeSeconds?: number;
 }
 
 /**
@@ -44,10 +50,13 @@ export interface GetMarketSnapshotParams {
 export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promise<MarketSnapshot> {
   const now = params.now ?? new Date();
   const inputUsdgBaseUnits = params.inputUsdgBaseUnits ?? DEFAULT_QUOTE_INPUT_USDG_BASE_UNITS;
+  if (inputUsdgBaseUnits <= 0n) throw new Error("Quote input must be positive");
   const notes: string[] = [];
 
   await assertChainId();
+  const net = activeNetwork();
   const entry = getVerifiedSymbol(params.symbol);
+  const contracts = routeContracts();
   const client = getPublicClient();
 
   const block = await client.getBlock();
@@ -57,28 +66,61 @@ export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promis
   let feedRoundId: string | null = null;
   let feedUpdatedAt: number | null = null;
   let feedAgeSeconds: number | null = null;
+  let feedAnswerRaw: string | null = null;
+  let observedFeedDecimals = entry.feed.decimals;
+  let oraclePaused: boolean | null = null;
+  let uiMultiplier = "unknown";
+  let pendingMultiplierRaw: string | null = null;
+  let multiplierEffectiveAt: number | null = null;
+  let multiplierState: MarketSnapshot["multiplierState"] = "UNAVAILABLE";
+  try {
+    const [paused, multiplier, pending, effectiveAt] = await Promise.all([
+      client.readContract({ address: entry.token.address, abi: TOKEN_ABI, functionName: "oraclePaused", blockNumber: block.number }),
+      client.readContract({ address: entry.token.address, abi: TOKEN_ABI, functionName: "uiMultiplier", blockNumber: block.number }),
+      client.readContract({ address: entry.token.address, abi: TOKEN_ABI, functionName: "newUIMultiplier", blockNumber: block.number }),
+      client.readContract({ address: entry.token.address, abi: TOKEN_ABI, functionName: "effectiveAt", blockNumber: block.number }),
+    ]);
+    oraclePaused = paused;
+    uiMultiplier = multiplier.toString();
+    pendingMultiplierRaw = pending.toString();
+    multiplierEffectiveAt = Number(effectiveAt);
+    multiplierState = "CONSISTENT";
+    if (paused) referenceStatus = "PAUSED";
+    if (multiplier <= 0n) referenceStatus = "UNAVAILABLE";
+    if (pending > 0n && pending !== multiplier) {
+      multiplierState = effectiveAt > block.timestamp ? "SCHEDULED" : "INCONSISTENT";
+      notes.push(`${multiplierState}_MULTIPLIER_TRANSITION_REQUIRES_REVIEW`);
+      if (!paused) referenceStatus = "UNAVAILABLE";
+    }
+  } catch {
+    referenceStatus = "UNAVAILABLE";
+    notes.push("ORACLE_STATE_UNAVAILABLE");
+  }
 
   try {
     const [feedDecimals, roundData] = await Promise.all([
-      client.readContract({ address: entry.feed.proxyAddress, abi: FEED_ABI, functionName: "decimals" }),
-      client.readContract({ address: entry.feed.proxyAddress, abi: FEED_ABI, functionName: "latestRoundData" }),
+      client.readContract({ address: entry.feed.proxyAddress, abi: FEED_ABI, functionName: "decimals", blockNumber: block.number }),
+      client.readContract({ address: entry.feed.proxyAddress, abi: FEED_ABI, functionName: "latestRoundData", blockNumber: block.number }),
     ]);
     const [roundId, answer, , updatedAt, answeredInRound] = roundData;
 
-    if (answer <= 0n) {
+    observedFeedDecimals = feedDecimals;
+    feedAnswerRaw = answer.toString();
+    if (answer <= 0n || roundId <= 0n || updatedAt <= 0n || updatedAt > block.timestamp || updatedAt > BigInt(Math.floor(now.getTime() / 1000))) {
       referenceStatus = "UNAVAILABLE";
       notes.push("FEED_NON_POSITIVE_ANSWER");
     } else if (answeredInRound !== roundId) {
       // Carried-over round: the aggregator hasn't produced a fresh answer for
       // this round yet. Treat conservatively as stale rather than usable.
-      referenceStatus = "STALE";
+      referenceStatus = "UNAVAILABLE";
       notes.push("FEED_ROUND_CARRIED_OVER");
     }
 
     feedPriceUsd = Number(answer) / 10 ** feedDecimals;
     feedRoundId = roundId.toString();
     feedUpdatedAt = Number(updatedAt);
-    feedAgeSeconds = Number(block.timestamp) - feedUpdatedAt;
+    feedAgeSeconds = Math.max(Number(block.timestamp), Math.floor(now.getTime() / 1000)) - feedUpdatedAt;
+    if (referenceStatus === "USABLE" && feedAgeSeconds > (params.maxFeedAgeSeconds ?? 900)) referenceStatus = "STALE";
 
     if (referenceStatus === "USABLE" && feedAgeSeconds > entry.feed.heartbeatSeconds * 2) {
       // Independent sanity check beyond mandate-level staleness: an answer
@@ -88,14 +130,14 @@ export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promis
     }
   } catch (err) {
     referenceStatus = "UNAVAILABLE";
-    notes.push(`FEED_READ_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+    notes.push("FEED_READ_FAILED");
   }
 
   let dexSpotPriceUsdg: number | null = null;
   try {
     const [slot0, token0] = await Promise.all([
-      client.readContract({ address: entry.pool.address, abi: POOL_ABI, functionName: "slot0" }),
-      client.readContract({ address: entry.pool.address, abi: POOL_ABI, functionName: "token0" }),
+      client.readContract({ address: entry.pool.address, abi: POOL_ABI, functionName: "slot0", blockNumber: block.number }),
+      client.readContract({ address: entry.pool.address, abi: POOL_ABI, functionName: "token0", blockNumber: block.number }),
     ]);
     const sqrtPriceX96 = slot0[0];
     const isTokenToken0 = token0.toLowerCase() === entry.token.address.toLowerCase();
@@ -107,18 +149,19 @@ export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promis
       : // token is token1, USDG is token0: rawPriceRatio adjusted gives token-per-usdg; invert.
         1 / (rawPriceRatio * 10 ** (USDG_DECIMALS - entry.token.decimals));
   } catch (err) {
-    notes.push(`POOL_SPOT_READ_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+    notes.push("POOL_SPOT_READ_FAILED");
   }
 
   let executableQuote: MarketSnapshot["executableQuote"] = null;
   try {
     const sim = await client.simulateContract({
-      address: QUOTER_ADDRESS,
+      address: contracts.quoter,
       abi: QUOTER_ABI,
       functionName: "quoteExactInputSingle",
+      blockNumber: block.number,
       args: [
         {
-          tokenIn: entry.pool.token0.symbol === "USDG" ? entry.pool.token0.address : entry.pool.token1.address,
+          tokenIn: contracts.usdg,
           tokenOut: entry.token.address,
           amountIn: inputUsdgBaseUnits,
           fee: entry.pool.feeTier,
@@ -146,7 +189,7 @@ export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promis
       };
     }
   } catch (err) {
-    notes.push(`EXECUTABLE_QUOTE_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+    notes.push("EXECUTABLE_QUOTE_FAILED");
   }
 
   let premiumBps: number | null = null;
@@ -157,9 +200,42 @@ export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promis
     notes.push("PREMIUM_INPUTS_INCOMPLETE");
   }
 
-  return {
+  // Never copy cached registry metadata into a fresh evidence packet.
+  let tradingHalt: boolean | null = null;
+  let pendingCorporateAction: boolean | null = null;
+  if (net.marketData === "TESTNET_MOCK") {
+    // A mock demo asset has no exchange, halts or corporate actions, and no official
+    // source to ask. Stated as not applicable, never as an official observation.
+    tradingHalt = false;
+    pendingCorporateAction = false;
+    notes.push("TESTNET_MOCK_MARKET: mock tokens, operator-set mock price, controlled liquidity; not market data",
+      "TRADING_HALT_NOT_APPLICABLE_MOCK_ASSET", "CORPORATE_ACTIONS_NOT_APPLICABLE_MOCK_ASSET",
+      "SESSION_IS_US_CASH_MARKET_CALENDAR_NOT_A_MOCK_MARKET_HOURS_SOURCE");
+  }
+  const metadata = net.marketData === "TESTNET_MOCK" ? [] as PromiseSettledResult<any>[] : await Promise.allSettled([
+    fetch(`https://api.robinhood.com/rhj/prices/${encodeURIComponent(params.symbol)}`, { signal: AbortSignal.timeout(10000) }).then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
+    fetch("https://api.robinhood.com/rhj/corporate-actions", { signal: AbortSignal.timeout(10000) }).then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
+  ]);
+  const prices = metadata[0];
+  if (prices?.status === "fulfilled" && Array.isArray(prices.value?.quotes)) {
+    const row = prices.value.quotes.find((q: { tokenSymbol?: string }) => q.tokenSymbol === params.symbol);
+    const age = now.getTime() - Date.parse(row?.generatedAt);
+    if (typeof row?.isTradingHalt === "boolean" && age >= 0 && age <= 60000) tradingHalt = row.isTradingHalt;
+  }
+  const actions = metadata[1];
+  if (actions?.status === "fulfilled" && Array.isArray(actions.value?.corpActions)) {
+    pendingCorporateAction = actions.value.corpActions.some((a: { tokenSymbol?: string; status?: string }) => a.tokenSymbol === params.symbol && a.status === "CORPORATE_ACTION_STATUS_IN_PROGRESS");
+  }
+  if (tradingHalt === null) notes.push("TRADING_HALT_UNAVAILABLE");
+  if (pendingCorporateAction === null) notes.push("CORPORATE_ACTIONS_UNAVAILABLE");
+  notes.push(net.marketData === "TESTNET_MOCK" ? "MOCK_USDG_NOT_USDG" : "USDG_USD_PARITY_ASSUMED", "PRICE_IMPACT_INCLUDES_POOL_FEE", "QUOTER_GAS_IS_NOT_TRANSACTION_GAS");
+
+  return attestLive({
+    provenance: "LIVE",
+    marketData: net.marketData,
+    network: net.label,
     capturedAt: now.toISOString(),
-    chainId: 4663,
+    chainId: net.chainId,
     blockNumber: block.number.toString(),
     blockHash: block.hash as `0x${string}`,
     symbol: params.symbol,
@@ -170,18 +246,24 @@ export async function getMarketSnapshot(params: GetMarketSnapshotParams): Promis
     quoteToken: "USDG",
     referenceStatus,
     feedPriceUsd,
-    feedDecimals: entry.feed.decimals,
+    feedDecimals: observedFeedDecimals,
+    feedAnswerRaw,
+    blockTimestamp: Number(block.timestamp),
+    oraclePaused,
+    pendingMultiplierRaw,
+    multiplierEffectiveAt,
+    multiplierState,
     feedRoundId,
     feedUpdatedAt,
     feedAgeSeconds,
-    uiMultiplier: entry.uiMultiplier.valueRaw,
+    uiMultiplier,
     dexSpotPriceUsdg,
     executableQuote,
     premiumBps,
     poolTvlUsdgSide: null,
-    tradingHalt: entry.tradingHaltAtVerification,
-    pendingCorporateAction: entry.corporateAction.pending,
+    tradingHalt,
+    pendingCorporateAction,
     session: sessionAt(now),
     notes,
-  };
+  });
 }
